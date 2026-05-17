@@ -1,10 +1,4 @@
 import { useEffect, useState } from 'react';
-import { pdfjs } from 'react-pdf';
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).href;
 
 let cached = null;
 
@@ -18,6 +12,9 @@ export const usePdfLibrary = () => {
 
     (async () => {
       const reactPdf = await import('react-pdf');
+
+      reactPdf.pdfjs.GlobalWorkerOptions.workerSrc =
+        '/pdf.worker.min.mjs';
 
       cached = reactPdf;
 
