@@ -12,16 +12,23 @@ export const Countdown = ({ onComplete, onCancel }) => {
 
   return (
     <div
-      className="fixed inset-0 z-40 grid place-items-center bg-black/60 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-40 grid place-items-center bg-black/65 backdrop-blur-md animate-fade-in"
       onClick={onCancel}
       role="status"
       aria-live="polite"
     >
-      <div className="text-center">
-        <div className="text-[120px] sm:text-[160px] font-light leading-none text-text-primary animate-pulse-soft tabular-nums">
+      <div className="text-center select-none">
+        <div
+          className="text-[120px] sm:text-[160px] font-light leading-none tabular-nums"
+          style={{
+            color: 'var(--vibe-accent)',
+            textShadow: '0 0 60px color-mix(in srgb, var(--vibe-accent) 40%, transparent)',
+            animation: 'pulseSoft 1s ease-in-out infinite',
+          }}
+        >
           {n}
         </div>
-        <div className="mt-2 text-sm text-text-secondary">Tap to cancel</div>
+        <div className="mt-4 text-sm text-text-secondary tracking-wide">Tap to cancel</div>
       </div>
     </div>
   );

@@ -11,4 +11,12 @@ export const STORAGE_KEYS = {
   vibe: 'readflow:vibe',
   sessions: 'readflow:sessions',
   lastSession: 'readflow:last-session',
+  ambient: 'readflow:ambient',
 };
+
+export const AMBIENT_TRACKS = [
+  { id: 'rain',  label: 'Rain',  emoji: '🌧️' },
+  { id: 'ocean', label: 'Ocean', emoji: '🌊' },
+  { id: 'cafe',  label: 'Café',  emoji: '☕' },
+  { id: 'lofi',  label: 'Lo-fi', emoji: '🎵' },
+];

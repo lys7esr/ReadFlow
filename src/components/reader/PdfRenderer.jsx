@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePdfLibrary } from '../../hooks/usePdfLibrary';
 import { useVibe } from '../../context/VibeContext';
 import { Spinner } from '../ui/Spinner';
@@ -26,6 +26,11 @@ export const PdfRenderer = forwardRef(function PdfRenderer(
   const [numPages, setNumPages] = useState(0);
   const [width, setWidth] = useState(800);
 
+  const pageRefs = useRef({});
+  const registerPage = useCallback((n, el) => {
+    if (el) pageRefs.current[n] = el;
+  }, []);
+
   useEffect(() => {
     const update = () => {
       const el = ref?.current;
@@ -37,7 +42,6 @@ export const PdfRenderer = forwardRef(function PdfRenderer(
     return () => window.removeEventListener('resize', update);
   }, [ref]);
 
-  // Track which page is currently in view via IntersectionObserver
   useEffect(() => {
     const root = ref?.current;
     if (!root || !numPages) return;
@@ -65,6 +69,7 @@ export const PdfRenderer = forwardRef(function PdfRenderer(
   }
 
   const { Document, Page } = lib;
+  const alignment = vibe.config.pageAlignment === 'left' ? 'mr-auto ml-0' : 'mx-auto';
 
   return (
     <Document
@@ -80,7 +85,12 @@ export const PdfRenderer = forwardRef(function PdfRenderer(
         <div
           key={i + 1}
           data-page={i + 1}
-          style={{ marginBottom: vibe.config.pageMargin }}
+          ref={(el) => registerPage(i + 1, el)}
+          className={alignment}
+          style={{
+            marginBottom: `${vibe.config.pageMargin}px`,
+            transition: 'margin 0.5s cubic-bezier(0.16,1,0.3,1)',
+          }}
         >
           <Page
             pageNumber={i + 1}
@@ -94,3 +104,5 @@ export const PdfRenderer = forwardRef(function PdfRenderer(
     </Document>
   );
 });
+
+PdfRenderer.displayName = 'PdfRenderer';

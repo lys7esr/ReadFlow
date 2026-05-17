@@ -14,19 +14,34 @@
     font-family: 'Inter', system-ui, sans-serif;
     overscroll-behavior: none;
   }
-  /* Custom scrollbar */
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #262A33; border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: #3A4050; }
+
+  /* Vibe-driven CSS variables — updated by VibeContext on every vibe change */
+  :root {
+    --vibe-accent: #6E8BFF;
+    --vibe-page-margin: 28px;
+    --vibe-page-radius: 8px;
+    --vibe-page-shadow: 0 8px 40px rgba(0,0,0,0.45);
+    --vibe-progress-h: 3px;
+    --vibe-transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 @layer components {
   .glass {
-    background: rgba(21, 23, 28, 0.72);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(18, 20, 26, 0.75);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.065);
+  }
+  .glass-strong {
+    background: rgba(14, 16, 21, 0.88);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
   .surface {
     background: #15171C;
@@ -37,7 +52,61 @@
   }
 }
 
-/* react-pdf overrides */
-.react-pdf__Page { margin: 0 auto 16px; }
-.react-pdf__Page__canvas { max-width: 100% !important; height: auto !important; border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
-.react-pdf__Page__textContent, .react-pdf__Page__annotations { display: none; }
+/* react-pdf overrides — driven by CSS vars so vibe changes are instant */
+.react-pdf__Page {
+  margin: 0 auto;
+  margin-bottom: var(--vibe-page-margin);
+  transition: margin var(--vibe-transition);
+}
+.react-pdf__Page__canvas {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: var(--vibe-page-radius) !important;
+  box-shadow: var(--vibe-page-shadow) !important;
+  transition: border-radius var(--vibe-transition), box-shadow var(--vibe-transition);
+}
+.react-pdf__Page__textContent,
+.react-pdf__Page__annotations { display: none; }
+
+/* Fullscreen polish */
+:fullscreen .fullscreen-hide,
+:-webkit-full-screen .fullscreen-hide { opacity: 0; pointer-events: none; }
+
+/* Range input — thumb uses vibe accent color */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-track {
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--vibe-accent);
+  margin-top: -5px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type='range']:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--vibe-accent) 50%, transparent);
+}
+input[type='range']::-moz-range-track {
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--vibe-accent);
+}

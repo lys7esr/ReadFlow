@@ -4,10 +4,11 @@ import { PdfRenderer } from '../components/reader/PdfRenderer';
 import { ReaderControls } from '../components/reader/ReaderControls';
 import { Countdown } from '../components/reader/Countdown';
 import { EndOfDocumentModal } from '../components/reader/EndOfDocumentModal';
+import { AmbientPanel } from '../components/ambient/AmbientPanel';
 import { useReader } from '../context/ReaderContext';
 import { useVibe } from '../context/VibeContext';
 import { useAutoScroll } from '../hooks/useAutoScroll';
-import { useFullscreen } from '../hooks/useFullscreen';
+import { useFullscreen } from '../hooks/useFullScreen';
 import { useIdleVisibility } from '../hooks/useIdleVisibility';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { sessionStore } from '../services/sessionStore';
@@ -30,19 +31,24 @@ export const ReaderPage = () => {
 
   const { isPlaying, speed, setSpeed, play, stop, toggle, onEnd } = useAutoScroll(scrollRef);
   const { isFullscreen, toggleFullscreen } = useFullscreen();
-  const [controlsVisible, setControlsVisible] = useIdleVisibility(isMobile() && isPlaying);
+
+  const idleEnabled = isMobile() && isPlaying;
+  const [controlsVisible] = useIdleVisibility(idleEnabled, vibe.config.autoHideDelay);
+
+  // Study and Accessibility always show controls
+  const showControls = vibe.config.controlsAlwaysVisible
+    ? true
+    : (controlsVisible || !isPlaying);
 
   useEffect(() => {
     if (!activePdf) navigate('/', { replace: true });
   }, [activePdf, navigate]);
 
-  // Initialize speed from vibe on first mount or vibe change while not playing
   useEffect(() => {
     if (!isPlaying) setSpeed(vibe.config.defaultSpeed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vibe.id]);
 
-  // Restore previous session
   useEffect(() => {
     if (!activePdf) return;
     const prev = sessionStore.get(activePdf.id);
@@ -53,28 +59,23 @@ export const ReaderPage = () => {
     });
   }, [activePdf, setSpeed]);
 
-  // Persist session continuously
   useEffect(() => {
     if (!activePdf) return;
     const el = scrollRef.current;
     if (!el) return;
-
     const save = () => {
-      const ratio = el.scrollHeight > 0 ? el.scrollTop / (el.scrollHeight - el.clientHeight) : 0;
-      setProgress(ratio);
       sessionStore.save(activePdf.id, {
         name: activePdf.name,
-        page, totalPages,
-        speed,
+        page, totalPages, speed,
         scrollTop: el.scrollTop,
       });
     };
-
     const onScroll = () => {
-      const ratio = el.scrollHeight > 0 ? el.scrollTop / (el.scrollHeight - el.clientHeight) : 0;
+      const ratio = el.scrollHeight > 0
+        ? el.scrollTop / Math.max(el.scrollHeight - el.clientHeight, 1)
+        : 0;
       setProgress(ratio);
     };
-
     el.addEventListener('scroll', onScroll, { passive: true });
     const interval = setInterval(save, 1500);
     window.addEventListener('beforeunload', save);
@@ -86,21 +87,15 @@ export const ReaderPage = () => {
     };
   }, [activePdf, page, totalPages, speed]);
 
-  // End-of-doc handling
   useEffect(() => {
     onEnd(() => setShowEndModal(true));
   }, [onEnd]);
 
-  const startWithCountdown = useCallback(() => {
-    setShowCountdown(true);
-  }, []);
+  const startWithCountdown = useCallback(() => setShowCountdown(true), []);
 
   const handleToggle = useCallback(() => {
-    if (isPlaying) {
-      toggle();
-    } else if (!showCountdown) {
-      startWithCountdown();
-    }
+    if (isPlaying) toggle();
+    else if (!showCountdown) startWithCountdown();
   }, [isPlaying, toggle, startWithCountdown, showCountdown]);
 
   const handleCountdownComplete = useCallback(() => {
@@ -112,9 +107,16 @@ export const ReaderPage = () => {
     setSpeed(clamp(v, READER_CONFIG.speed.min, READER_CONFIG.speed.max));
   }, [setSpeed]);
 
-  // Mobile: tap container to toggle play/pause
+  // Smooth-scroll to any page number
+  const handlePageJump = useCallback((targetPage) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const pageEl = el.querySelector(`[data-page="${targetPage}"]`);
+    if (!pageEl) return;
+    el.scrollTo({ top: pageEl.offsetTop - 24, behavior: 'smooth' });
+  }, []);
+
   const handleSurfaceClick = (e) => {
-    // Ignore clicks originating from controls
     if (e.target.closest('[data-controls]')) return;
     if (!isMobile()) return;
     if (showCountdown) return;
@@ -142,19 +144,35 @@ export const ReaderPage = () => {
 
   if (!activePdf) return null;
 
+  const readerMaxWidth =
+    vibe.config.uiDensity === 'comfortable' ? 'max-w-3xl' :
+    vibe.config.uiDensity === 'compact'     ? 'max-w-2xl' :
+    vibe.config.uiDensity === 'sparse'      ? 'max-w-2xl' :
+    'max-w-3xl';
+
+  const bgOverlay = vibe.config.bgOverlay;
+
   return (
     <div className="fixed inset-0 bg-bg-base">
+      {/* Manga vibe dark overlay */}
+      {bgOverlay !== 'rgba(11, 12, 15, 0.0)' && (
+        <div
+          className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-700"
+          style={{ background: bgOverlay }}
+        />
+      )}
+
       <div
         ref={scrollRef}
         onClick={handleSurfaceClick}
-        className="h-full w-full overflow-y-auto overflow-x-hidden"
+        className="relative z-10 h-full w-full overflow-y-auto overflow-x-hidden"
         style={{
           paddingTop: 'max(env(safe-area-inset-top), 16px)',
           paddingBottom: '180px',
           scrollBehavior: 'auto',
         }}
       >
-        <div className="mx-auto max-w-3xl px-3">
+        <div className={`mx-auto ${readerMaxWidth} px-3`}>
           <PdfRenderer
             ref={scrollRef}
             fileUrl={activePdf.url}
@@ -176,8 +194,10 @@ export const ReaderPage = () => {
           isFullscreen={isFullscreen}
           onFullscreenToggle={toggleFullscreen}
           onExit={() => { stop(); navigate('/'); }}
-          visible={controlsVisible || !isPlaying}
+          visible={showControls}
+          onPageJump={handlePageJump}
         />
+        {!isFullscreen && <AmbientPanel />}
       </div>
 
       {showCountdown && (

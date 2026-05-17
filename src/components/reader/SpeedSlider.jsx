@@ -1,8 +1,10 @@
 import { READER_CONFIG } from '../../constants/reader';
 
-export const SpeedSlider = ({ value, onChange }) => (
-  <div className="flex items-center gap-3 w-full">
-    <span className="text-[10px] uppercase tracking-widest text-text-muted">Speed</span>
+export const SpeedSlider = ({ value, onChange, compact = false }) => (
+  <div className="flex items-center gap-2.5 w-full">
+    <span className={`${compact ? 'hidden sm:block' : 'block'} text-[10px] uppercase tracking-[0.15em] text-text-muted flex-shrink-0`}>
+      Speed
+    </span>
     <input
       type="range"
       min={READER_CONFIG.speed.min}
@@ -11,8 +13,10 @@ export const SpeedSlider = ({ value, onChange }) => (
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
       aria-label="Scroll speed"
-      className="flex-1 accent-accent h-1 rounded-full"
+      className="flex-1"
     />
-    <span className="text-xs text-text-secondary w-10 text-right tabular-nums">{value}</span>
+    <span className="text-xs text-text-secondary w-8 text-right tabular-nums flex-shrink-0">
+      {value}
+    </span>
   </div>
 );
