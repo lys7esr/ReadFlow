@@ -1,4 +1,3 @@
-//ignore these files
 node_modules# Logs
 logs
 *.log
